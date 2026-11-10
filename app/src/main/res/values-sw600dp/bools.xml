@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 折叠屏展开 / 平板：主界面左右双栏，右侧常驻「生成」面板 -->
+    <bool name="wide_screen">true</bool>
+</resources>

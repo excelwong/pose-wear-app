@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="⑥ 设置"
+            android:textSize="@dimen/text_title"
+            android:textStyle="bold"
+            android:textColor="@color/primary" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="@dimen/section_gap"
+            android:padding="@dimen/card_padding"
+            android:background="@drawable/bg_note"
+            android:text="@string/settings_hint"
+            android:textSize="@dimen/text_small"
+            android:textColor="@color/text_primary" />
+
+        <!-- 远程 ComfyUI 服务 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/card_padding"
+            android:background="@drawable/bg_card">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="远程 ComfyUI 服务"
+                android:textSize="@dimen/text_body"
+                android:textStyle="bold"
+                android:textColor="@color/primary" />
+
+            <LinearLayout
+                android:id="@+id/form_service"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="6dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingTop="6dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_test"
+                    android:layout_width="wrap_content"
+                    android:layout_height="@dimen/btn_height"
+                    android:text="测试连接"
+                    android:textSize="@dimen/text_small"
+                    style="?attr/materialButtonOutlinedStyle" />
+
+                <TextView
+                    android:id="@+id/tv_conn"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:layout_marginStart="8dp"
+                    android:text="尚未测试"
+                    android:textSize="@dimen/text_small"
+                    android:textColor="@color/text_secondary"
+                    android:maxLines="2"
+                    android:ellipsize="end" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- 本机素材库目录 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/section_gap"
+            android:orientation="vertical"
+            android:padding="@dimen/card_padding"
+            android:background="@drawable/bg_card">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="手机本地素材库目录"
+                android:textSize="@dimen/text_body"
+                android:textStyle="bold"
+                android:textColor="@color/primary" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="4dp"
+                android:text="把桌面版的「服装库」「姿态库」两个文件夹（含 _metadata.csv）拷到手机存储，然后在这里定位它们的目录。"
+                android:textSize="@dimen/text_small"
+                android:textColor="@color/text_secondary"
+                android:lineSpacingExtra="2dp" />
+
+            <LinearLayout
+                android:id="@+id/form_dirs"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="6dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingTop="6dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_pick_costume"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/btn_height"
+                    android:layout_weight="1"
+                    android:text="选服装库目录"
+                    android:textSize="@dimen/text_small"
+                    style="?attr/materialButtonOutlinedStyle" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_pick_pose"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/btn_height"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:text="选姿态库目录"
+                    android:textSize="@dimen/text_small"
+                    style="?attr/materialButtonOutlinedStyle" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingTop="4dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_scan"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/btn_height"
+                    android:layout_weight="1"
+                    android:text="重新扫描素材库"
+                    android:textSize="@dimen/text_small"
+                    style="?attr/materialButtonOutlinedStyle" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_permission"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/btn_height"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:text="存储权限"
+                    android:textSize="@dimen/text_small"
+                    style="?attr/materialButtonOutlinedStyle" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_catalog"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="6dp"
+                android:text="尚未扫描"
+                android:textSize="@dimen/text_small"
+                android:textColor="@color/text_secondary"
+                android:maxLines="4"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_save"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/btn_height"
+            android:layout_marginTop="@dimen/section_gap"
+            android:text="保存设置（下次启动自动装载）"
+            android:textSize="@dimen/text_body" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_reset"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/btn_height"
+            android:layout_marginTop="4dp"
+            android:text="恢复本页默认（不影响模型与参数）"
+            android:textSize="@dimen/text_small"
+            style="?attr/materialButtonOutlinedStyle" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/section_gap"
+            android:padding="@dimen/card_padding"
+            android:background="@drawable/bg_warning"
+            android:text="电脑端需运行 ComfyUI（≥ v0.37.0）并加 --listen 0.0.0.0 --port 8188，手机与电脑处于同一局域网。App 只作为 HTTP 客户端，模型仍在电脑上运行；选 *.gguf 基模时电脑端还需 ComfyUI-GGUF 插件。"
+            android:textSize="@dimen/text_small"
+            android:textColor="@color/text_primary"
+            android:lineSpacingExtra="3dp" />
+
+        <TextView
+            android:id="@+id/tv_version"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/section_gap"
+            android:gravity="center"
+            android:text="应用版本"
+            android:textSize="@dimen/text_small"
+            android:textColor="@color/text_secondary" />
+
+    </LinearLayout>
+</ScrollView>

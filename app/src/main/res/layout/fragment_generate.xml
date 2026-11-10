@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <!-- 固定条：保持原图背景 + 当前模式 + 进度，永远可见 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="@dimen/screen_padding"
+        android:paddingEnd="@dimen/screen_padding"
+        android:paddingTop="6dp"
+        android:paddingBottom="4dp"
+        android:background="@color/panel_bg">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <CheckBox
+                android:id="@+id/cb_keep_bg"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="保持原图背景"
+                android:textSize="@dimen/text_small"
+                android:textColor="@color/text_primary" />
+
+            <TextView
+                android:id="@+id/tv_mode"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="6dp"
+                android:text="未选择素材"
+                android:textSize="@dimen/text_small"
+                android:textColor="@color/text_secondary"
+                android:maxLines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_progress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="就绪"
+            android:textSize="@dimen/text_small"
+            android:textColor="@color/text_secondary"
+            android:maxLines="1"
+            android:ellipsize="end" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="false">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/screen_padding">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="输出画幅比例"
+                android:textSize="@dimen/text_body"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary" />
+
+            <GridLayout
+                android:id="@+id/ratio_grid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:columnCount="3"
+                android:orientation="horizontal"
+                android:useDefaultMargins="false" />
+
+            <TextView
+                android:id="@+id/tv_resolution"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dp"
+                android:paddingBottom="6dp"
+                android:text="1344:1792"
+                android:textSize="@dimen/text_small"
+                android:textColor="@color/primary" />
+
+            <TextView
+                android:id="@+id/tv_prompt_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="提示词（随素材自动更新，可临时修改）"
+                android:textSize="@dimen/text_body"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary" />
+
+            <EditText
+                android:id="@+id/et_prompt"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="140dp"
+                android:layout_marginTop="6dp"
+                android:padding="10dp"
+                android:gravity="top"
+                android:background="@drawable/bg_input"
+                android:inputType="textMultiLine|textNoSuggestions"
+                android:textSize="@dimen/text_small"
+                android:lineSpacingExtra="3dp"
+                android:importantForAutofill="no" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/section_gap"
+                android:text="生成结果"
+                android:textSize="@dimen/text_body"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/preview_min_h"
+                android:layout_marginTop="6dp"
+                android:background="@drawable/bg_thumb">
+
+                <ImageView
+                    android:id="@+id/iv_result"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="fitCenter"
+                    android:adjustViewBounds="true"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:contentDescription="生成结果" />
+
+                <TextView
+                    android:id="@+id/tv_result_hint"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="尚未生成"
+                    android:textSize="@dimen/text_body"
+                    android:textColor="@color/text_secondary" />
+            </FrameLayout>
+
+            <TextView
+                android:id="@+id/tv_result_info"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="5dp"
+                android:text="生成后会保存到手机本地，并在上方预览。"
+                android:textSize="@dimen/text_small"
+                android:textColor="@color/text_secondary"
+                android:maxLines="3"
+                android:ellipsize="end" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingTop="4dp">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_open"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/btn_height"
+                    android:layout_weight="1"
+                    android:text="查看大图"
+                    android:textSize="@dimen/text_small"
+                    style="?attr/materialButtonOutlinedStyle" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_save_as"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/btn_height"
+                    android:layout_weight="1"
+                    android:layout_marginStart="6dp"
+                    android:text="另存为…"
+                    android:textSize="@dimen/text_small"
+                    style="?attr/materialButtonOutlinedStyle" />
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+    <!-- 固定底栏：开始生成 / 中断，不随内容滚动 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="@dimen/screen_padding"
+        android:paddingEnd="@dimen/screen_padding"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp"
+        android:background="@drawable/bg_status">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_generate"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/btn_height"
+            android:layout_weight="1"
+            android:text="开始生成"
+            android:textSize="@dimen/text_body" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_interrupt"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/btn_height"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:text="中断当前任务"
+            android:textSize="@dimen/text_body"
+            android:enabled="false"
+            style="?attr/materialButtonOutlinedStyle" />
+
+        <ProgressBar
+            android:id="@+id/progress"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:layout_marginStart="8dp"
+            android:indeterminate="true"
+            android:visibility="gone" />
+    </LinearLayout>
+
+</LinearLayout>

@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="① 人物照片"
+            android:textSize="@dimen/text_title"
+            android:textStyle="bold"
+            android:textColor="@color/primary"
+            android:paddingBottom="@dimen/section_gap" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/card_padding"
+            android:background="@drawable/bg_card">
+
+            <FrameLayout
+                android:id="@+id/preview_wrap"
+                android:layout_width="match_parent"
+                android:layout_height="320dp"
+                android:background="@drawable/bg_thumb"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:id="@+id/person_preview"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:scaleType="fitCenter"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="人物照片预览" />
+
+                <TextView
+                    android:id="@+id/tv_photo_hint"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="点击此处选择人物正面照片\n支持 JPG / PNG / WEBP"
+                    android:textSize="@dimen/text_body"
+                    android:textColor="@color/text_secondary"
+                    android:lineSpacingExtra="6dp" />
+            </FrameLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_pick_photo"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/btn_height"
+                android:layout_marginTop="@dimen/section_gap"
+                android:text="选择照片…" />
+
+            <TextView
+                android:id="@+id/tv_photo_path"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="尚未选择照片"
+                android:textSize="@dimen/text_small"
+                android:textColor="@color/text_secondary"
+                android:maxLines="2"
+                android:ellipsize="middle" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/section_gap"
+            android:padding="@dimen/card_padding"
+            android:background="@drawable/bg_warning"
+            android:text="@string/person_disclaimer"
+            android:textSize="@dimen/text_small"
+            android:textColor="@color/text_primary"
+            android:lineSpacingExtra="3dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/section_gap"
+            android:padding="@dimen/card_padding"
+            android:background="@drawable/bg_note"
+            android:text="照片只会在点击「开始生成」时上传到你在设置页填写的 ComfyUI 地址（一般是同一局域网里的本机电脑），不会发往其它服务器。"
+            android:textSize="@dimen/text_small"
+            android:textColor="@color/text_primary"
+            android:lineSpacingExtra="3dp" />
+
+    </LinearLayout>
+</ScrollView>

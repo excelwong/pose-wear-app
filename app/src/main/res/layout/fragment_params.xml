@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/screen_padding">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="⑤ 模型与参数"
+            android:textSize="@dimen/text_title"
+            android:textStyle="bold"
+            android:textColor="@color/primary" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="@dimen/section_gap"
+            android:padding="@dimen/card_padding"
+            android:background="@drawable/bg_note"
+            android:text="不常调整的配置项：分辨率档位、采样参数、ComfyUI 侧模型三件套。修改后点「保存」，或直接切走本页自动保存；下次打开应用自动装载。"
+            android:textSize="@dimen/text_small"
+            android:textColor="@color/text_primary" />
+
+        <!-- 生成分辨率 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/card_padding"
+            android:background="@drawable/bg_card">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="生成分辨率"
+                android:textSize="@dimen/text_body"
+                android:textStyle="bold"
+                android:textColor="@color/primary" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="4dp"
+                android:text="9 种画幅比例 × 7 档像素预算；末尾两档面向 6 GB 显存的电脑。显存不足时会自动逐档降级重试。"
+                android:textSize="@dimen/text_small"
+                android:textColor="@color/text_secondary" />
+
+            <LinearLayout
+                android:id="@+id/form_tier"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="6dp" />
+
+            <TextView
+                android:id="@+id/tv_tier_detail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="6dp"
+                android:text="当前档位"
+                android:textSize="@dimen/text_small"
+                android:textColor="@color/primary" />
+        </LinearLayout>
+
+        <!-- 生成参数 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/section_gap"
+            android:orientation="vertical"
+            android:padding="@dimen/card_padding"
+            android:background="@drawable/bg_card">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="生成参数"
+                android:textSize="@dimen/text_body"
+                android:textStyle="bold"
+                android:textColor="@color/primary" />
+
+            <LinearLayout
+                android:id="@+id/form_params"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="6dp" />
+        </LinearLayout>
+
+        <!-- 模型选择 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/section_gap"
+            android:orientation="vertical"
+            android:padding="@dimen/card_padding"
+            android:background="@drawable/bg_card">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="模型"
+                android:textSize="@dimen/text_body"
+                android:textStyle="bold"
+                android:textColor="@color/primary" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="4dp"
+                android:text="下拉显示纯文件名；text encoder 传给 ComfyUI 时自动带 qwen_image_2.1\ 子目录前缀。选 *.gguf 基模时电脑端需安装 ComfyUI-GGUF 插件。清单外的自定义名字会保留。"
+                android:textSize="@dimen/text_small"
+                android:textColor="@color/text_secondary" />
+
+            <LinearLayout
+                android:id="@+id/form_models"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingTop="6dp" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_presets"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/section_gap"
+            android:padding="@dimen/card_padding"
+            android:background="@drawable/bg_note"
+            android:text="切换基模的推荐组合"
+            android:textSize="@dimen/text_small"
+            android:textColor="@color/text_primary"
+            android:lineSpacingExtra="2dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_save"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/btn_height"
+            android:layout_marginTop="@dimen/section_gap"
+            android:text="保存模型与参数（下次启动自动装载）"
+            android:textSize="@dimen/text_body" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_reset"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/btn_height"
+            android:layout_marginTop="4dp"
+            android:text="恢复本页默认（不影响 ComfyUI 地址与素材库目录）"
+            android:textSize="@dimen/text_small"
+            style="?attr/materialButtonOutlinedStyle" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/section_gap"
+            android:padding="@dimen/card_padding"
+            android:background="@drawable/bg_warning"
+            android:text="切换基模会立刻套用推荐组合（text encoder、步数、分辨率档位）；之后手工改的值不会被覆盖，直到下次切换基模。电脑端 models 目录下的文件必须与这里选的名字完全一致。"
+            android:textSize="@dimen/text_small"
+            android:textColor="@color/text_primary"
+            android:lineSpacingExtra="3dp" />
+
+    </LinearLayout>
+</ScrollView>

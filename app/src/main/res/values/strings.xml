@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">衣姿工坊 · 安卓版</string>
+
+    <string name="tab_person">1.人物照片</string>
+    <string name="tab_costume">2.服装库</string>
+    <string name="tab_pose">3.姿态库</string>
+    <string name="tab_generate">4.生成</string>
+    <string name="tab_params">5.模型与参数</string>
+    <string name="tab_settings">6.设置</string>
+
+    <string name="status_ready">就绪。请先在「6.设置」填写 ComfyUI 地址与素材库目录。</string>
+    <string name="person_disclaimer">仅限本人或已获授权的成年人肖像，禁止上传未成年人照片。生成结果仅在手机本地保存，不会上传到第三方。</string>
+    <string name="settings_hint">这些设置保存在本机，下次打开应用时自动装载。分辨率档位、采样参数与模型三件套在「5.模型与参数」页。</string>
+</resources>

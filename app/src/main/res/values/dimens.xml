@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="screen_padding">8dp</dimen>
+    <dimen name="card_padding">12dp</dimen>
+    <dimen name="section_gap">8dp</dimen>
+    <dimen name="text_title">18sp</dimen>
+    <dimen name="text_body">14sp</dimen>
+    <dimen name="text_small">12sp</dimen>
+    <dimen name="btn_height">46dp</dimen>
+    <dimen name="form_label_w">96dp</dimen>
+    <dimen name="thumb_height">130dp</dimen>
+    <dimen name="preview_min_h">200dp</dimen>
+    <dimen name="status_min_h">34dp</dimen>
+    <dimen name="tab_min_h">44dp</dimen>
+    <dimen name="right_panel_w">0dp</dimen>
+</resources>
