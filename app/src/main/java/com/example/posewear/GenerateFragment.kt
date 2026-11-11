@@ -216,7 +216,7 @@ class GenerateFragment : Fragment(R.layout.fragment_generate) {
     }
 
     /**
-     * 「上半身单人」系列的姿态图是半身 / 胸像，不能要求「人物完整入画、手清晰可见、不裁切头脚」。
+     * 「上半身单人」系列的姿态图是半身 / 胸像，不能要求「人物完整入画、不裁切头脚」。
      * 优先看实际选中的姿态参考图；没有姿态参考图时看姿态页当前筛选的系列。
      */
     private fun upperBodyActive(): Boolean {
@@ -253,7 +253,8 @@ class GenerateFragment : Fragment(R.layout.fragment_generate) {
         val upper = upperBodyActive()
         var text = when {
             Store.nude -> Prompt.nudePrompt(
-                hasP, Store.pose?.name ?: "", Store.pose?.angle ?: "", upper
+                hasP, Store.pose?.name ?: "", Store.pose?.angle ?: "", upper,
+                Store.pose?.description ?: ""
             )
             !hasC && !hasP -> Prompt.PLACEHOLDER
             else -> Prompt.makePrompt(
@@ -261,7 +262,8 @@ class GenerateFragment : Fragment(R.layout.fragment_generate) {
                 Store.costume?.keywords ?: "",
                 Store.pose?.name ?: "",
                 Store.pose?.angle ?: "",
-                upperBody = upper
+                upperBody = upper,
+                poseDescription = Store.pose?.description ?: ""
             )
         }
         if (Store.keepBackground) text = Prompt.applyKeepBackground(text, upper)

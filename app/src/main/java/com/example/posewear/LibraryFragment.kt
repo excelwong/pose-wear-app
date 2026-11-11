@@ -112,7 +112,10 @@ class LibraryFragment : Fragment(R.layout.fragment_library) {
         spinnerReady = false
         cascadeGuard = true
         try {
-            l1 = listen { onPrimaryChanged() }
+            // 服装页只有一级「分类」：选中后必须直接重新过滤。
+            // 以前这里统一绑 onPrimaryChanged()，而它对服装页 isCostume 直接 return，
+            // 导致下拉能选、列表却永远不刷新（BUG）。姿态页一级是「系统」，才走三级级联。
+            l1 = listen { if (isCostume) applyFilter() else onPrimaryChanged() }
             l2 = listen { onSecondaryChanged() }
             l3 = listen { applyFilter() }
 
@@ -140,6 +143,7 @@ class LibraryFragment : Fragment(R.layout.fragment_library) {
     }
 
     private fun onPrimaryChanged() {
+        // 只处理姿态页的「系统」级联；服装页的一级是分类，由 setupSpinners 直接绑 applyFilter()
         if (!spinnerReady || cascadeGuard || isCostume) return
         cascadeGuard = true
         try {

@@ -5,7 +5,8 @@ import android.net.Uri
 import android.provider.DocumentsContract
 import java.io.File
 
-/** 素材库条目。locator 是绝对路径或 content:// document uri。 */
+/** 素材库条目。locator 是绝对路径或 content:// document uri。
+ *  description 是 _metadata.csv「姿态描述_中文」列，提示词里姿态参考句冒号后的内容全部由它提供。 */
 data class LibItem(
     val id: String,
     val name: String,
@@ -13,7 +14,8 @@ data class LibItem(
     val category: String,
     val group: String = "",
     val angle: String = "",
-    val locator: String = ""
+    val locator: String = "",
+    val description: String = ""
 )
 
 private data class Collected(
@@ -53,6 +55,11 @@ object Catalog {
         poses = buildItems(POSE, p)
         costumeError = c.error
         poseError = p.error
+        // 手机上仍可能是旧版 CSV（没有「姿态描述_中文」列）：明确提示用户重新拷贝
+        if (poses.isNotEmpty() && poses.all { it.description.isBlank() }) {
+            val hint = "姿态库 _metadata.csv 缺少「姿态描述_中文」列，请把电脑端更新后的 CSV 重新拷到手机；当前提示词会降级为「姿态名 + 角度视角」。"
+            poseError = listOf(poseError, hint).filter { it.isNotBlank() }.joinToString("\n")
+        }
         // 恢复选择：优先保留用户当前已选，其次才是上次保存的 id
         val keepC = Store.costume?.id ?: cfg.costumeId
         val keepP = Store.pose?.id ?: cfg.poseId
@@ -208,7 +215,8 @@ object Catalog {
                         category = m["分类"] ?: "",
                         group = m["系统"] ?: "",
                         angle = m["角度"] ?: "",
-                        locator = loc
+                        locator = loc,
+                        description = m["姿态描述_中文"] ?: ""
                     )
                 }
             }

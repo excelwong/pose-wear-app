@@ -2,14 +2,17 @@ package com.example.posewear
 
 /**
  * 与桌面版 workflow.py / app.py 逐字一致的提示词逻辑。
- * 所有文案都明确限定「成年女性」，App 内另有「禁止未成年人照片」的提示与确认。
+ * App 内另有「禁止未成年人照片」的提示与确认（2026-11-11 起提示词正文不再写「成年女性」）。
+ *
+ * 姿态参考句：统一前缀 + 冒号 + _metadata.csv「姿态描述_中文」整段。该列已包含
+ * 画幅、躯体姿势、四肢手指、脸部朝向与镜头方向，不再按「角度」列额外拼短句。
  */
 object Prompt {
     /** 姿态库 CSV「系统」列的这个取值是半身 / 胸像素材，不能套用全身构图描述。 */
     const val UPPER_BODY_SYSTEM = "上半身单人"
 
-    /** 全身构图强调手清晰可见，避免袖口空荡、缺手（与桌面版 workflow.py 逐字一致）。 */
-    const val FRAME_FULL = "人物完整入画、手清晰可见、不裁切头脚"
+    /** 全身构图（与桌面版 workflow.py 逐字一致）。 */
+    const val FRAME_FULL = "人物完整入画、不裁切头脚"
     const val FRAME_UPPER = "半身取景，头部与上半身完整入画、不裁切头部与肩膀，腿部不必入画"
 
     const val SCENE_TAIL_KEEP_BG = "保持<image1> 的背景、光线不变。"
@@ -24,6 +27,33 @@ object Prompt {
             "低分辨率，模糊，过曝，卡通，插画，3D 渲染，文字，水印，logo，边框"
 
     const val NUDE_TAGS = "completed_nude,slimthick body type with large prominent chest,with a slim waist and a full bust,huge_breasts,large_breasts,small_nipples,sparse_pubic_hair"
+
+    /** 姿态参考句统一前缀，与桌面版 workflow.py 的 POSE_REF_PREFIX 生成的句子逐字一致。 */
+    const val POSE_REF_PREFIX = "让她的身体姿势、四肢位置、脸部朝向、身体朝向与镜头角度完全参照"
+
+    /**
+     * 生成姿态参考句：统一前缀 + 冒号 + _metadata.csv「姿态描述_中文」整段。
+     * description 自带句末句号；旧素材库缺列时降级为「姿态名 + 角度视角。」，
+     * 但不追加任何按角度推断的脸部朝向短句。与桌面版 pose_reference_line() 行为一致。
+     */
+    fun poseReferenceLine(
+        poseTag: String,
+        description: String = "",
+        poseName: String = "",
+        poseAngle: String = ""
+    ): String {
+        var desc = description.trim()
+        if (desc.isBlank()) {
+            val bits = listOfNotNull(
+                poseName.trim().takeIf { it.isNotEmpty() },
+                poseAngle.trim().takeIf { it.isNotEmpty() }?.let { "${it}视角" }
+            )
+            desc = if (bits.isEmpty()) "" else bits.joinToString("，") + "。"
+        } else if (listOf("。", "！", "？", ".", "!", "?").none { desc.endsWith(it) }) {
+            desc += "。"
+        }
+        return "$POSE_REF_PREFIX $poseTag" + if (desc.isEmpty()) "。" else "：$desc"
+    }
 
     fun sceneTail(upperBody: Boolean): String =
         if (upperBody) SCENE_TAIL_UPPER else SCENE_TAIL
@@ -45,7 +75,8 @@ object Prompt {
         poseName: String = "",
         poseAngle: String = "",
         keepBackground: Boolean = false,
-        upperBody: Boolean = false
+        upperBody: Boolean = false,
+        poseDescription: String = ""
     ): String {
         if (!tags.containsKey("costume") && !tags.containsKey("pose"))
             throw IllegalArgumentException("服装和姿态至少要选择一项")
@@ -53,7 +84,7 @@ object Prompt {
         val costume = tags["costume"]
         val pose = tags["pose"]
         val lines = mutableListOf<String>()
-        lines += "以 ${person} 中的成年女性为主角，严格保持她的面部特征、五官、发型发色、肤色与体型不变，生成一张自然写实的人像摄影照片。"
+        lines += "以 ${person} 中的女性为主角，严格保持她的面部特征、五官、发型发色、肤色与体型不变，生成一张自然写实的人像摄影照片。"
         if (costume != null) {
             val cloth = if (costumeKeywords.isBlank()) "" else "（${costumeKeywords}）"
             lines += "让她换上 ${costume} 中展示的整套服装，精确还原款式、颜色、图案、面料质感与搭配${cloth}。"
@@ -61,9 +92,7 @@ object Prompt {
             lines += "严格保持 ${person} 中她原本的服装不变：款式、颜色、图案、面料质感与搭配都与原照片完全一致，不要更换、添加或改动任何衣物。"
         }
         if (pose != null) {
-            val desc = if (poseName.isBlank()) "" else "：${poseName}"
-            val angle = if (poseAngle.isBlank()) "" else "，${poseAngle}视角"
-            lines += "让她的身体姿势、四肢位置、脸部和身体朝向与镜头角度完全参照 ${pose}${desc}${angle}。"
+            lines += poseReferenceLine(pose, poseDescription, poseName, poseAngle)
         } else {
             lines += "严格保持 ${person} 中她原本的身体姿势、四肢位置、身体朝向与镜头角度不变，不要改变动作、站姿或坐姿。"
         }
@@ -81,15 +110,14 @@ object Prompt {
         hasPose: Boolean,
         poseName: String = "",
         poseAngle: String = "",
-        upperBody: Boolean = false
+        upperBody: Boolean = false,
+        poseDescription: String = ""
     ): String {
         val lines = mutableListOf<String>()
-        lines += "以 <image1> 中的成年女性为主角，严格保持她的面部特征、五官、发型发色、肤色与体型不变。"
+        lines += "以 <image1> 中的女性为主角，严格保持她的面部特征、五官、发型发色、肤色与体型不变。"
         lines += "让她完全脱光所有衣物，呈现全裸状态。"
         if (hasPose) {
-            val desc = if (poseName.isBlank()) "" else "：${poseName}"
-            val angle = if (poseAngle.isBlank()) "" else "，${poseAngle}视角"
-            lines += "让她的身体姿势、四肢位置、脸部和身体朝向与镜头角度完全参照 <image2>${desc}${angle}。"
+            lines += poseReferenceLine("<image2>", poseDescription, poseName, poseAngle)
         } else {
             lines += "保持她原本的身体姿势不变。"
         }
