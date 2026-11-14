@@ -22,7 +22,8 @@ object Workflow {
         steps: Int,
         cfgScale: Double,
         cfg: Cfg,
-        prefix: String
+        prefix: String,
+        stripBackground: Boolean = false
     ): Pair<JSONObject, String> {
         require(refs.size in 1..3) { "参考图数量必须是 1~3 张，当前 ${refs.size} 张" }
         val realSeed = if (seed == 0L) Random.nextInt(1, Int.MAX_VALUE).toLong() else seed
@@ -102,12 +103,44 @@ object Workflow {
                 .put("samples", link("30", 0))
                 .put("vae", link("4", 0))))
 
+        // 「背景」下拉选到透明背景：生成图先经 BiRefNet 抠成 RGBA，落盘即透明 PNG
+        var outImage = link("31", 0)
+        if (stripBackground) {
+            // VAEDecode 可能是 4 通道，BiRefNet 只吃 3 通道；核心节点取前 3 通道
+            p.put("41", JSONObject()
+                .put("class_type", "SplitImageWithAlpha")
+                .put("inputs", JSONObject().put("image", outImage)))
+            p.put("40", JSONObject()
+                .put("class_type", "BiRefNetRMBG")
+                .put("inputs", Rmbg.inputs(link("41", 0))))
+            outImage = link("40", 0)
+        }
         p.put("32", JSONObject()
             .put("class_type", "SaveImage")
             .put("inputs", JSONObject()
-                .put("images", link("31", 0))
+                .put("images", outImage)
                 .put("filename_prefix", prefix)))
 
         return Pair(p, "32")
     }
+}
+
+/**
+ * 「透明背景」模式共用的抠图节点参数（与桌面版 config.rmbg_inputs 一致）。
+ * 插件 process_image() 用 params["mask_blur"] 直接索引 optional 参数而非 .get()，
+ * API 格式下必须显式传齐；background=Alpha 让第一个输出成为 RGBA 四通道图，
+ * SaveImage 落盘即透明 PNG。权重在 ComfyUI 服务端，两端共用一份。
+ */
+object Rmbg {
+    const val MODEL = "BiRefNet_lite"
+
+    fun inputs(imageLink: JSONArray): JSONObject = JSONObject()
+        .put("image", imageLink)
+        .put("model", MODEL)
+        .put("sensitivity", 1.0)
+        .put("mask_blur", 0)
+        .put("mask_offset", 0)
+        .put("invert_output", false)
+        .put("refine_foreground", false)
+        .put("background", "Alpha")
 }

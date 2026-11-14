@@ -7,6 +7,13 @@ package com.example.posewear
  * 三个 text encoder 实际都在 models/text_encoders/qwen_image_2.1/ 子目录，
  * 电脑端是 Windows 版 ComfyUI，所以 value 用反斜杠（与 /object_info 列表逐字一致）。
  */
+/** MiniMax-H3-Image 三件套（与桌面版 config.py 一致）。 */
+val H3_UNET = "minimax_h3_image_pruned_int8_convrot.safetensors"
+val H3_CLIP = "minimax_h3\\qwen3vl_32b_minimax_h3_int8_convrot.safetensors"
+val H3_VAE = "minimax_h3_image_vae_fp16.safetensors"
+val H3_STEPS = 6
+val H3_CFG = 1.0
+
 object Models {
     data class Choice(val label: String, val value: String)
 
@@ -16,7 +23,8 @@ object Models {
         Choice("qwen-image-2.1-UC-Q4_K_M.gguf",
             "qwen-image-2.1-UC-Q4_K_M.gguf"),
         Choice("qwen-image-2.1-turbo-Q4_K_M.gguf",
-            "qwen-image-2.1-turbo-Q4_K_M.gguf")
+            "qwen-image-2.1-turbo-Q4_K_M.gguf"),
+        Choice("[H3] " + H3_UNET, H3_UNET)
     )
 
     val CLIP: List<Choice> = listOf(
@@ -25,17 +33,18 @@ object Models {
         Choice("qwen3vl_8b_int8_convrot.safetensors",
             "qwen_image_2.1\\qwen3vl_8b_int8_convrot.safetensors"),
         Choice("qwen3vl_8b_w4a8.safetensors",
-            "qwen_image_2.1\\qwen3vl_8b_w4a8.safetensors")
+            "qwen_image_2.1\\qwen3vl_8b_w4a8.safetensors"),
+        Choice("[H3] qwen3vl_32b_minimax_h3_int8_convrot.safetensors", H3_CLIP)
     )
 
-    /** Qwen-Image 2.1 只能用这一个 VAE。 */
     val VAE: List<Choice> = listOf(
         Choice("qwen_image_2.1_vae_bf16.safetensors",
-            "qwen_image_2.1_vae_bf16.safetensors")
+            "qwen_image_2.1_vae_bf16.safetensors"),
+        Choice("[H3] minimax_h3_image_vae_fp16.safetensors", H3_VAE)
     )
 
     /** 切换基模时的推荐组合：text encoder 显示名 + 步数 + 分辨率档位名。 */
-    data class Preset(val clipLabel: String, val steps: Int, val tier: String)
+    data class Preset(val clipLabel: String, val steps: Int, val tier: String, val vaeLabel: String = "qwen_image_2.1_vae_bf16.safetensors", val cfgValue: Double = 1.0)
 
     val DEFAULTS: Map<String, Preset> = mapOf(
         "qwen-image-2.1-UC-int8_convrot.safetensors" to
@@ -43,7 +52,10 @@ object Models {
         "qwen-image-2.1-UC-Q4_K_M.gguf" to
             Preset("qwen3vl_8b_int8_convrot.safetensors", 25, "低显存：1MP"),
         "qwen-image-2.1-turbo-Q4_K_M.gguf" to
-            Preset("qwen3vl_8b_w4a8.safetensors", 8, "低显存：0.6MP")
+            Preset("qwen3vl_8b_w4a8.safetensors", 8, "低显存：0.6MP"),
+        H3_UNET to
+            Preset("[H3] qwen3vl_32b_minimax_h3_int8_convrot.safetensors", H3_STEPS, "H3：16MP",
+                  "[H3] minimax_h3_image_vae_fp16.safetensors", H3_CFG)
     )
 
     /** GGUF 量化基模必须走 ComfyUI-GGUF 插件的 UnetLoaderGGUF（无 weight_dtype 输入）。 */

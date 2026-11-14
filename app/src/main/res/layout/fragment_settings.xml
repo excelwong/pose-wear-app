@@ -102,7 +102,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:paddingTop="4dp"
-                android:text="把桌面版的「服装库」「姿态库」两个文件夹（含 _metadata.csv）拷到手机存储，然后在这里定位它们的目录。"
+                android:text="素材库可放在本机任意目录：手填绝对路径，或点下方按钮从内部存储根目录选择。Android 11 及以上建议先开启「所有文件访问权限」，否则部分手机的选择器只列出相机 / Pictures。"
                 android:textSize="@dimen/text_small"
                 android:textColor="@color/text_secondary"
                 android:lineSpacingExtra="2dp" />
@@ -161,7 +161,7 @@
                     android:layout_height="@dimen/btn_height"
                     android:layout_weight="1"
                     android:layout_marginStart="6dp"
-                    android:text="存储权限"
+                    android:text="开启所有文件访问权限"
                     android:textSize="@dimen/text_small"
                     style="?attr/materialButtonOutlinedStyle" />
             </LinearLayout>

@@ -9,6 +9,9 @@ object Store {
 
     // 人物照片：绝对路径或 content:// uri
     var personLocator: String = ""
+    // 原始人物照片的像素尺寸（与 personLocator 一起持久化，用于显示分辨率 / 画幅比例）
+    var personW: Int = 0
+    var personH: Int = 0
 
     // 当前选中的素材
     var costume: LibItem? = null
@@ -22,8 +25,10 @@ object Store {
     var keepCostume = false     // 不换装 · 保持原服装
     var nude = false            // 全裸 · 无服装（仅服装页）
     var keepPose = false        // 不换姿势 · 保持原姿势
+    var halfBody = false        // 半身照（姿态页）：全裸提示词中不写阴毛描述
 
-    var keepBackground = false
+    /** 生成页「背景」下拉：keep / white / transparent，默认 keep，随设置持久化。 */
+    var bgMode = BgMode.KEEP
     var ratio = "3:4"
 
     var promptText = ""         // 切 tab 时不丢用户改过的提示词
@@ -68,6 +73,12 @@ object Store {
     fun hasPoseRef() = pose != null
     fun hasAnyChoice() = hasCostumeRef() || hasPoseRef() || keepCostume || nude || keepPose
 
+    /** 两个「保持原样」同时勾选且无其他素材 = 什么都不换（1 张参考图）。 */
+    fun plainMode(): Boolean = keepCostume && keepPose && costume == null && pose == null && !nude
+
+    /** 「背景」下拉选到透明背景：生成图经 BiRefNet 抠成 RGBA 透明 PNG。 */
+    fun transparentBg(): Boolean = BgMode.isTransparent(bgMode)
+
     /**
      * 恢复设置 / 重新扫描素材库后调用：只整理每一页内部的互斥关系，
      * 绝不改动另一页的选项（例如「全裸」不会清掉「保持原姿势」）。
@@ -82,12 +93,14 @@ object Store {
     fun syncToCfg() {
         if (!::cfg.isInitialized) return
         cfg.personPath = personLocator
+        cfg.personW = personW
+        cfg.personH = personH
         cfg.costumeId = costume?.id ?: ""
         cfg.poseId = pose?.id ?: ""
         cfg.keepCostume = keepCostume
         cfg.nude = nude
         cfg.keepPose = keepPose
-        cfg.keepBackground = keepBackground
+        cfg.bgMode = BgMode.normalize(bgMode)
         cfg.ratio = ratio
         cfg.lastResult = lastResult
     }

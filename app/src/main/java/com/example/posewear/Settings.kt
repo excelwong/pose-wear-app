@@ -2,6 +2,20 @@ package com.example.posewear
 
 import android.content.Context
 
+/** 生成页「背景」下拉的三个取值（与桌面版 config.BG_MODES 一致）。 */
+object BgMode {
+    const val KEEP = "keep"
+    const val WHITE = "white"
+    const val TRANSPARENT = "transparent"
+    val VALUES = listOf(KEEP, WHITE, TRANSPARENT)
+    val LABELS = listOf("保持原图背景", "纯白背景", "透明背景")
+
+    /** 非法 / 旧值一律回落为默认「保持原图背景」。 */
+    fun normalize(v: String): String = if (v in VALUES) v else KEEP
+    fun label(v: String): String = LABELS.getOrElse(VALUES.indexOf(normalize(v))) { LABELS[0] }
+    fun isTransparent(v: String): Boolean = normalize(v) == TRANSPARENT
+}
+
 /**
  * 全部需要持久化的设置。与桌面版 config.py / config.json 一一对应。
  * 保存到 SharedPreferences（本机），App.onCreate 里自动装载。
@@ -28,12 +42,15 @@ data class Cfg(
     var vae: String = "qwen_image_2.1_vae_bf16.safetensors",
     // 界面选择状态（下次启动一并恢复）
     var personPath: String = "",
+    // 原始人物照片的像素尺寸（选图时记录，重启后仍能在人物页显示）
+    var personW: Int = 0,
+    var personH: Int = 0,
     var costumeId: String = "",
     var poseId: String = "",
     var keepCostume: Boolean = false,
     var nude: Boolean = false,
     var keepPose: Boolean = false,
-    var keepBackground: Boolean = false,
+    var bgMode: String = BgMode.KEEP,
     var lastResult: String = ""
 ) {
     /** host 允许直接填完整 URL，也允许只填 IP / 域名。 */
@@ -72,12 +89,14 @@ object Settings {
             clip = p.getString("clip", d.clip) ?: d.clip,
             vae = p.getString("vae", d.vae) ?: d.vae,
             personPath = p.getString("personPath", d.personPath) ?: d.personPath,
+            personW = p.getInt("personW", d.personW),
+            personH = p.getInt("personH", d.personH),
             costumeId = p.getString("costumeId", d.costumeId) ?: d.costumeId,
             poseId = p.getString("poseId", d.poseId) ?: d.poseId,
             keepCostume = p.getBoolean("keepCostume", d.keepCostume),
             nude = p.getBoolean("nude", d.nude),
             keepPose = p.getBoolean("keepPose", d.keepPose),
-            keepBackground = p.getBoolean("keepBackground", d.keepBackground),
+            bgMode = BgMode.normalize(p.getString("bgMode", d.bgMode) ?: d.bgMode),
             lastResult = p.getString("lastResult", d.lastResult) ?: d.lastResult
         )
     }
@@ -100,12 +119,14 @@ object Settings {
             .putString("clip", c.clip)
             .putString("vae", c.vae)
             .putString("personPath", c.personPath)
+            .putInt("personW", c.personW)
+            .putInt("personH", c.personH)
             .putString("costumeId", c.costumeId)
             .putString("poseId", c.poseId)
             .putBoolean("keepCostume", c.keepCostume)
             .putBoolean("nude", c.nude)
             .putBoolean("keepPose", c.keepPose)
-            .putBoolean("keepBackground", c.keepBackground)
+            .putString("bgMode", BgMode.normalize(c.bgMode))
             .putString("lastResult", c.lastResult)
             .apply()
     }

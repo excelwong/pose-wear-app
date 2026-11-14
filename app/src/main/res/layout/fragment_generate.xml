@@ -4,7 +4,8 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <!-- 固定条：保持原图背景 + 当前模式 + 进度，永远可见 -->
+    <!-- 固定条：背景下拉 + 当前模式（独立一整行，自动换行显示完整）；
+         进度由 Activity 底部状态栏统一显示，此处不再重复。 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -21,36 +22,31 @@
             android:orientation="horizontal"
             android:gravity="center_vertical">
 
-            <CheckBox
-                android:id="@+id/cb_keep_bg"
+            <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="保持原图背景"
+                android:text="背景"
                 android:textSize="@dimen/text_small"
-                android:textColor="@color/text_primary" />
+                android:textColor="@color/text_secondary" />
 
-            <TextView
-                android:id="@+id/tv_mode"
+            <Spinner
+                android:id="@+id/sp_bg_mode"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:layout_marginStart="6dp"
-                android:text="未选择素材"
-                android:textSize="@dimen/text_small"
-                android:textColor="@color/text_secondary"
-                android:maxLines="1"
-                android:ellipsize="end" />
+                android:minHeight="36dp"
+                android:spinnerMode="dropdown" />
         </LinearLayout>
 
         <TextView
-            android:id="@+id/tv_progress"
+            android:id="@+id/tv_mode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="就绪"
+            android:layout_marginTop="2dp"
+            android:text="未选择素材"
             android:textSize="@dimen/text_small"
-            android:textColor="@color/text_secondary"
-            android:maxLines="1"
-            android:ellipsize="end" />
+            android:textColor="@color/text_secondary" />
     </LinearLayout>
 
     <ScrollView

@@ -5,7 +5,7 @@
     android:orientation="vertical"
     android:padding="@dimen/screen_padding">
 
-    <!-- 两个互斥按钮：等宽、对称间距、统一 inset / 高度 / 单行居中 -->
+    <!-- 服装页：保持原服装 / 全裸（两个等宽按钮）；姿态页：保持原姿势 / 半身照（两个等宽按钮） -->
     <LinearLayout
         android:id="@+id/option_bar"
         android:layout_width="match_parent"
@@ -53,6 +53,28 @@
             android:maxLines="1"
             android:ellipsize="end"
             android:text="全裸 · 无服装"
+            android:textSize="@dimen/text_small"
+            android:visibility="gone"
+            style="@style/Widget.Material3.Button.OutlinedButton" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_half_body"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/btn_height"
+            android:layout_weight="1"
+            android:layout_marginStart="3dp"
+            android:layout_gravity="center_vertical"
+            android:minHeight="0dp"
+            android:insetLeft="0dp"
+            android:insetRight="0dp"
+            android:insetTop="0dp"
+            android:insetBottom="0dp"
+            android:paddingStart="4dp"
+            android:paddingEnd="4dp"
+            android:gravity="center"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text="半身照"
             android:textSize="@dimen/text_small"
             android:visibility="gone"
             style="@style/Widget.Material3.Button.OutlinedButton" />

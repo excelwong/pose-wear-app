@@ -6,7 +6,8 @@ import android.provider.DocumentsContract
 import java.io.File
 
 /** 素材库条目。locator 是绝对路径或 content:// document uri。
- *  description 是 _metadata.csv「姿态描述_中文」列，提示词里姿态参考句冒号后的内容全部由它提供。 */
+ *  description 是 _metadata.csv「姿态描述_中文」列（Qwen 引擎用）。
+ *  descriptionEn 是「姿态描述_英文」列（H3 引擎的提示词直接用该列）。 */
 data class LibItem(
     val id: String,
     val name: String,
@@ -15,7 +16,8 @@ data class LibItem(
     val group: String = "",
     val angle: String = "",
     val locator: String = "",
-    val description: String = ""
+    val description: String = "",
+    val descriptionEn: String = ""
 )
 
 private data class Collected(
@@ -27,6 +29,8 @@ private data class Collected(
 object Catalog {
     const val COSTUME = "costume"
     const val POSE = "pose"
+    /** 子目录递归上限：允许素材库放在较深的目录里（旧版 3 层会漏掉深层图片）。 */
+    private const val MAX_SCAN_DEPTH = 8
 
     @Volatile var costumes: List<LibItem> = emptyList()
     @Volatile var poses: List<LibItem> = emptyList()
@@ -55,9 +59,13 @@ object Catalog {
         poses = buildItems(POSE, p)
         costumeError = c.error
         poseError = p.error
-        // 手机上仍可能是旧版 CSV（没有「姿态描述_中文」列）：明确提示用户重新拷贝
+        // 手机上仍可能是旧版 CSV（缺列）：明确提示用户重新拷贝
         if (poses.isNotEmpty() && poses.all { it.description.isBlank() }) {
             val hint = "姿态库 _metadata.csv 缺少「姿态描述_中文」列，请把电脑端更新后的 CSV 重新拷到手机；当前提示词会降级为「姿态名 + 角度视角」。"
+            poseError = listOf(poseError, hint).filter { it.isNotBlank() }.joinToString("\n")
+        }
+        if (poses.isNotEmpty() && poses.all { it.descriptionEn.isBlank() }) {
+            val hint = "姿态库 _metadata.csv 缺少「姿态描述_英文」列，选 H3 档位的提示词会降级为英文通用句；请把电脑端更新后的 CSV 重新拷到手机。"
             poseError = listOf(poseError, hint).filter { it.isNotBlank() }.joinToString("\n")
         }
         // 恢复选择：优先保留用户当前已选，其次才是上次保存的 id
@@ -95,7 +103,7 @@ object Catalog {
     }
 
     private fun walkFile(dir: File, out: LinkedHashMap<String, String>, depth: Int) {
-        if (depth > 3) return
+        if (depth > MAX_SCAN_DEPTH) return
         val list = dir.listFiles() ?: return
         for (f in list) {
             if (f.isDirectory) walkFile(f, out, depth + 1)
@@ -125,7 +133,7 @@ object Catalog {
         out: LinkedHashMap<String, String>, depth: Int,
         onCsv: (String, Uri) -> Unit
     ) {
-        if (depth > 3) return
+        if (depth > MAX_SCAN_DEPTH) return
         val children = DocumentsContract.buildChildDocumentsUriUsingTree(tree, docId)
         val proj = arrayOf(
             DocumentsContract.Document.COLUMN_DOCUMENT_ID,
@@ -216,7 +224,8 @@ object Catalog {
                         group = m["系统"] ?: "",
                         angle = m["角度"] ?: "",
                         locator = loc,
-                        description = m["姿态描述_中文"] ?: ""
+                        description = m["姿态描述_中文"] ?: "",
+                        descriptionEn = m["姿态描述_英文"] ?: ""
                     )
                 }
             }

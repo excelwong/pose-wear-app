@@ -108,7 +108,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         maybeAskMediaPermission()
-        maybeShowDisclaimer()
+        maybeShowDisclaimer { maybeAskAllFilesAccess() }
         autoLoad()
     }
 
@@ -137,6 +137,27 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Android 11+ 未授予「所有文件访问权限」时，内置文件浏览器往往列不出
+     * 部分目录、也读不到缩略图。首次启动引导一次，让浏览器能访问全部目录。
+     */
+    private fun maybeAskAllFilesAccess() {
+        if (StoragePick.hasAllFilesAccess()) return
+        val sp = getSharedPreferences("posewear_allfiles", MODE_PRIVATE)
+        if (sp.getBoolean("asked", false)) return
+        sp.edit().putBoolean("asked", true).apply()
+        AlertDialog.Builder(this)
+            .setTitle("开启「所有文件访问权限」")
+            .setMessage(
+                "为了能从本机任意目录选择照片和素材库，" +
+                "Android 11 及以上需要开启本应用的「所有文件访问权限」。\n\n" +
+                "请在接下来的系统设置里打开开关；也可以稍后到「6.设置」里补开。"
+            )
+            .setPositiveButton("去开启") { _, _ -> StoragePick.openAllFilesSettings(this) }
+            .setNegativeButton("稍后") { _, _ -> }
+            .show()
+    }
+
     private fun maybeAskMediaPermission() {
         val perm = if (Build.VERSION.SDK_INT >= 33)
             Manifest.permission.READ_MEDIA_IMAGES else Manifest.permission.READ_EXTERNAL_STORAGE
@@ -146,9 +167,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** 首次启动的成年人肖像使用确认（与桌面版免责声明一致）。 */
-    private fun maybeShowDisclaimer() {
+    private fun maybeShowDisclaimer(onDone: () -> Unit) {
         val sp = getSharedPreferences("posewear_disclaimer", MODE_PRIVATE)
-        if (sp.getBoolean("shown", false)) return
+        if (sp.getBoolean("shown", false)) { onDone(); return }
         AlertDialog.Builder(this)
             .setTitle("使用前请确认")
             .setMessage(
@@ -158,6 +179,7 @@ class MainActivity : AppCompatActivity() {
             )
             .setPositiveButton("我已成年并同意") { _, _ ->
                 sp.edit().putBoolean("shown", true).apply()
+                onDone()
             }
             .setNegativeButton("退出") { _, _ -> finish() }
             .setCancelable(false)

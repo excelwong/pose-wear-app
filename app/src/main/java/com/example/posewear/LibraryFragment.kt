@@ -37,6 +37,7 @@ class LibraryFragment : Fragment(R.layout.fragment_library) {
 
     private lateinit var btnKeep: MaterialButton
     private lateinit var btnNude: MaterialButton
+    private lateinit var btnHalfBody: MaterialButton
     private lateinit var sp1: Spinner
     private lateinit var sp2: Spinner
     private lateinit var sp3: Spinner
@@ -60,6 +61,7 @@ class LibraryFragment : Fragment(R.layout.fragment_library) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         btnKeep = view.findViewById(R.id.btn_keep)
         btnNude = view.findViewById(R.id.btn_nude)
+        btnHalfBody = view.findViewById(R.id.btn_half_body)
         sp1 = view.findViewById(R.id.sp_filter1)
         sp2 = view.findViewById(R.id.sp_filter2)
         sp3 = view.findViewById(R.id.sp_filter3)
@@ -68,9 +70,10 @@ class LibraryFragment : Fragment(R.layout.fragment_library) {
         pageLabel = view.findViewById(R.id.tv_page)
         rv = view.findViewById(R.id.rv_grid)
 
-        // 两个按钮文案长度接近、单行居中，避免长文本换行造成的错位
+        // 姿态页三个选项按钮：保持原姿势 / 半身照，服装页两个：保持原服装 / 全裸
         btnKeep.text = if (isCostume) "保持原服装" else "保持原姿势"
         btnNude.visibility = if (isCostume) View.VISIBLE else View.GONE
+        btnHalfBody.visibility = if (isCostume) View.GONE else View.VISIBLE
 
         adapter = ThumbAdapter { item -> onItemClicked(item) }
         rv.layoutManager = GridLayoutManager(
@@ -81,6 +84,7 @@ class LibraryFragment : Fragment(R.layout.fragment_library) {
 
         btnKeep.setOnClickListener { toggleKeep() }
         btnNude.setOnClickListener { toggleNude() }
+        btnHalfBody.setOnClickListener { toggleHalfBody() }
         view.findViewById<MaterialButton>(R.id.btn_prev).setOnClickListener {
             if (page > 0) { page--; render() }
         }
@@ -260,14 +264,18 @@ class LibraryFragment : Fragment(R.layout.fragment_library) {
     private fun syncUi() {
         val keep = currentKeep()
         val nude = isCostume && Store.nude
+        val halfBody = !isCostume && Store.halfBody
         btnKeep.text = (if (keep) "✓ " else "") +
                 (if (isCostume) "保持原服装" else "保持原姿势")
         btnKeep.alpha = if (keep) 1f else 0.82f
         btnNude.text = (if (nude) "✓ " else "") + "全裸 · 无服装"
         btnNude.alpha = if (nude) 1f else 0.82f
+        btnHalfBody.text = (if (halfBody) "✓ " else "") + "半身照"
+        btnHalfBody.alpha = if (halfBody) 1f else 0.82f
         adapter.setSelected(currentSelectedId())
         info.text = when {
             nude -> "已设为「全裸 · 无服装」，不上传服装参考图。"
+            Store.plainMode() -> "两个「保持原样」已同时勾选：原样保留人物，背景由生成页「背景」下拉决定。"
             keep -> if (isCostume) "已设为「不换装 · 保持原服装」，只按姿态/原姿势生成。" else "已设为「不换姿势 · 保持原姿势」，不上传姿态参考图。"
             currentSelectedId().isNotEmpty() -> "已选择：${if (isCostume) Store.costume?.name else Store.pose?.name}"
             else -> "未选择 · 点选一张图片，或选择上方选项。"
@@ -305,6 +313,12 @@ class LibraryFragment : Fragment(R.layout.fragment_library) {
             Store.keepCostume = false
             Store.costume = null
         }
+        commit()
+    }
+
+    private fun toggleHalfBody() {
+        if (isCostume) return    // 服装页没有这个按钮，防御性守卫
+        Store.halfBody = !Store.halfBody
         commit()
     }
 

@@ -5,11 +5,13 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
-import android.widget.CheckBox
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.EditText
 import android.widget.GridLayout
 import android.widget.ImageView
 import android.widget.ProgressBar
+import android.widget.Spinner
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
@@ -27,9 +29,8 @@ import java.io.File
 
 class GenerateFragment : Fragment(R.layout.fragment_generate) {
 
-    private lateinit var cbKeepBg: CheckBox
+    private lateinit var spBgMode: Spinner
     private lateinit var tvMode: TextView
-    private lateinit var tvProgress: TextView
     private lateinit var tvPromptLabel: TextView
     private lateinit var ratioGrid: GridLayout
     private lateinit var tvResolution: TextView
@@ -51,6 +52,9 @@ class GenerateFragment : Fragment(R.layout.fragment_generate) {
     /** 只处理 selection 版本号的真实变化，避免切 tab 重新订阅时把手工修改覆盖掉。 */
     private var lastSelectionVersion = Int.MIN_VALUE
 
+    /** 记录上次观察到的引擎：档位切换导致 Qwen ↔ H3 变化时必须重建提示词。 */
+    private var lastEngine: String? = null
+
     private val saveAs = registerForActivityResult(
         ActivityResultContracts.CreateDocument("image/png")
     ) { uri ->
@@ -69,9 +73,8 @@ class GenerateFragment : Fragment(R.layout.fragment_generate) {
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        cbKeepBg = view.findViewById(R.id.cb_keep_bg)
+        spBgMode = view.findViewById(R.id.sp_bg_mode)
         tvMode = view.findViewById(R.id.tv_mode)
-        tvProgress = view.findViewById(R.id.tv_progress)
         tvPromptLabel = view.findViewById(R.id.tv_prompt_label)
         ratioGrid = view.findViewById(R.id.ratio_grid)
         tvResolution = view.findViewById(R.id.tv_resolution)
@@ -102,14 +105,23 @@ class GenerateFragment : Fragment(R.layout.fragment_generate) {
             }
         })
 
-        cbKeepBg.isChecked = Store.keepBackground
-        cbKeepBg.setOnCheckedChangeListener { _, on ->
-            Store.keepBackground = on
-            Store.syncToCfg()
-            Settings.save(requireContext(), Store.cfg)
-            // 与桌面版 _on_keep_bg() 一致：勾选状态变化立即重建提示词
-            rebuildPrompt()
-            updateMode()
+        val bgAdapter = ArrayAdapter(requireContext(), R.layout.item_spinner, BgMode.LABELS)
+        bgAdapter.setDropDownViewResource(R.layout.item_spinner)
+        spBgMode.adapter = bgAdapter
+        // 先选中已保存的值再挂监听器；监听器只在值真的变化时写盘并重建提示词，
+        // 因此初始化回调 / setSelection 触发的回调都会因「值未变」而直接返回。
+        spBgMode.setSelection(BgMode.VALUES.indexOf(BgMode.normalize(Store.bgMode)), false)
+        spBgMode.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, v: View?, pos: Int, id: Long) {
+                val mode = BgMode.VALUES.getOrElse(pos) { BgMode.KEEP }
+                if (mode == Store.bgMode) return
+                Store.bgMode = mode
+                Store.syncToCfg()
+                Settings.save(requireContext(), Store.cfg)
+                rebuildPrompt()
+                updateMode()
+            }
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
 
         btnGenerate.setOnClickListener { startGenerate() }
@@ -129,6 +141,8 @@ class GenerateFragment : Fragment(R.layout.fragment_generate) {
 
         updateResolution()
         updateMode()
+        // 先记下初始引擎，首次 configVersion 发射（StateFlow 立即给当前值）不算引擎变化
+        lastEngine = Resolution.engineFor(Store.cfg.megapixels)
         if (Store.lastResult.isNotBlank()) showResult(Store.lastResult)
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -136,9 +150,22 @@ class GenerateFragment : Fragment(R.layout.fragment_generate) {
                 launch { Store.selection.collect { v -> if (isAdded) onSelectionVersion(v) } }
                 launch { Store.busy.collect { b -> if (isAdded) updateButtons(b) } }
                 launch { Store.resultFile.collect { p -> if (isAdded && p.isNotBlank()) showResult(p) } }
-                launch { Store.status.collect { s -> if (isAdded) tvProgress.text = s } }
-                // 「5.模型与参数」页保存/恢复默认/联动改档位后，立即刷新生成页的分辨率备注
-                launch { Store.configVersion.collect { if (isAdded) updateResolution() } }
+                // 进度统一由 Activity 底部状态栏（订阅 Store.status）显示，此处不重复订阅
+                // 「5.模型与参数」页保存/恢复默认后刷新分辨率备注；
+                // 引擎发生变化时还要重建提示词（Qwen 中文 <imageN> ↔ H3 英文 <Picture N>），
+                // 否则生成页仍留着另一引擎的提示词，提交时必然校验失败。
+                launch {
+                    Store.configVersion.collect {
+                        if (!isAdded) return@collect
+                        val eng = Resolution.engineFor(Store.cfg.megapixels)
+                        if (lastEngine != null && eng != lastEngine) {
+                            lastEngine = eng
+                            rebuildPrompt()
+                            updateMode()
+                        }
+                        updateResolution()
+                    }
+                }
             }
         }
     }
@@ -153,7 +180,8 @@ class GenerateFragment : Fragment(R.layout.fragment_generate) {
     /** 首次订阅：冷启动恢复过素材但提示词还是占位符时补一次生成；否则保留现有文本。 */
     private fun onFirstSubscribe() {
         val cur = etPrompt.text?.toString()?.trim().orEmpty()
-        val hasChoice = Store.nude || Store.costume != null || Store.pose != null
+        // 双保持模式没有服装/姿态对象，恢复设置后也要补一次提示词重建
+        val hasChoice = Store.nude || Store.costume != null || Store.pose != null || Store.plainMode()
         if (hasChoice && (cur.isBlank() || cur == Prompt.PLACEHOLDER.trim())) {
             rebuildPrompt()
             return
@@ -228,14 +256,16 @@ class GenerateFragment : Fragment(R.layout.fragment_generate) {
 
     private fun updateMode() {
         var m = when {
+            Store.plainMode() -> "原样保留（1 张参考图）"
             Store.nude -> "全裸 · 无服装"
             Store.costume != null && Store.pose != null -> "换装 + 换姿势"
             Store.costume != null -> "只换装 · 保持原姿势"
             Store.pose != null -> "只换姿势 · 保持原服装"
             else -> "未选择素材"
         }
-        if (Store.keepBackground) m += " · 保持原图背景"
+        m += " · " + BgMode.label(Store.bgMode)
         if (upperBodyActive()) m += " · 半身构图"
+        if (Resolution.engineFor(Store.cfg.megapixels) == "h3") m += " · H3-Image"
         tvMode.text = m
     }
 
@@ -246,15 +276,35 @@ class GenerateFragment : Fragment(R.layout.fragment_generate) {
             "提示词（随素材自动更新，可临时修改）"
     }
 
-    /** 与桌面版 app.py._update_prompt() 完全一致的模式分支。 */
+    /** 与桌面版 app.py._update_prompt() 一致的模式分支，按引擎生成提示词。 */
     private fun rebuildPrompt() {
         val hasC = Store.costume != null
         val hasP = Store.pose != null
         val upper = upperBodyActive()
-        var text = when {
+        val eng = Resolution.engineFor(Store.cfg.megapixels)
+        val text = if (Store.plainMode()) {
+            // 什么都不换，背景由下拉决定；透明背景时生成后工作流再抠成 RGBA
+            if (eng == "h3") H3Prompt.plain(Store.bgMode, upper)
+            else Prompt.plainPrompt(Store.bgMode, upper)
+        } else if (eng == "h3") {
+            h3Rebuild(hasC, hasP, upper)
+        } else {
+            qwenRebuild(hasC, hasP, upper)
+        }
+        settingText = true
+        etPrompt.setText(text)
+        settingText = false
+        Store.promptText = text
+        Store.promptDirty = false
+        updatePromptLabel()
+    }
+
+    private fun qwenRebuild(hasC: Boolean, hasP: Boolean, upper: Boolean): String {
+        val bg = Store.bgMode
+        return when {
             Store.nude -> Prompt.nudePrompt(
                 hasP, Store.pose?.name ?: "", Store.pose?.angle ?: "", upper,
-                Store.pose?.description ?: ""
+                Store.pose?.description ?: "", bg, Store.halfBody
             )
             !hasC && !hasP -> Prompt.PLACEHOLDER
             else -> Prompt.makePrompt(
@@ -262,17 +312,25 @@ class GenerateFragment : Fragment(R.layout.fragment_generate) {
                 Store.costume?.keywords ?: "",
                 Store.pose?.name ?: "",
                 Store.pose?.angle ?: "",
+                bgMode = bg,
                 upperBody = upper,
                 poseDescription = Store.pose?.description ?: ""
             )
         }
-        if (Store.keepBackground) text = Prompt.applyKeepBackground(text, upper)
-        settingText = true
-        etPrompt.setText(text)
-        settingText = false
-        Store.promptText = text
-        Store.promptDirty = false
-        updatePromptLabel()
+    }
+
+    private fun h3Rebuild(hasC: Boolean, hasP: Boolean, upper: Boolean): String {
+        val tags = H3Prompt.refTags(hasC, hasP)
+        return if (Store.nude) {
+            H3Prompt.nude(tags, Store.pose?.descriptionEn ?: "", Store.bgMode, upper, Store.halfBody)
+        } else if (!hasC && !hasP) {
+            "# 请先在「② 服装库」或「③ 姿态库」中至少选择一项（也可两项都选）。\n" +
+            "# 选到 H3 档位时提示词为英文整图描述；切换档位或点选素材会自动重建。\n" +
+            "# 姿态参考图用 _metadata.csv 的「姿态描述_英文」列。"
+        } else {
+            H3Prompt.make(tags, "", Store.pose?.name ?: "", Store.pose?.angle ?: "",
+                Store.pose?.descriptionEn ?: "", Store.bgMode, upper, false, Store.halfBody)
+        }
     }
 
     private fun buildRefs(): List<RefSpec> {
@@ -283,18 +341,30 @@ class GenerateFragment : Fragment(R.layout.fragment_generate) {
         return refs
     }
 
-    private fun negativeFor(refs: List<RefSpec>, hasC: Boolean, hasP: Boolean): String {
-        if (Store.nude && !hasP) return Prompt.negativeNudeNoPose()
-        return Prompt.makeNegative(Prompt.refTags(hasC, hasP))
+    private fun negativeFor(hasC: Boolean, hasP: Boolean): String {
+        // 双保持模式只有 1 张参考图，refTags(false,false) 不可用，必须用专用负面词
+        val base = when {
+            Store.plainMode() -> Prompt.NEGATIVE_PLAIN
+            Store.nude && !hasP -> Prompt.negativeNudeNoPose()
+            else -> Prompt.makeNegative(Prompt.refTags(hasC, hasP))
+        }
+        return Prompt.withBgNegative(base, Store.bgMode)
     }
 
     private fun validate(refs: List<RefSpec>, prompt: String): String? {
         if (Store.personLocator.isBlank()) return "请先在「1.人物照片」选择人物照片。"
         if (!Store.hasAnyChoice()) return "请至少选择服装或姿态（或勾选「不换装」「不换姿势」「全裸」）。"
-        if (refs.size == 1 && !Store.nude)
+        // 双保持「原样保留」模式本来就只有 1 张人物原图
+        if (refs.size == 1 && !Store.nude && !Store.plainMode())
             return "服装和姿态至少要选择一项；当前只有人物原图，无法构建生成提示词。"
         if (prompt.isBlank()) return "提示词为空，请先选择素材让提示词自动生成。"
-        Prompt.validatePrompt(prompt, refs.size)?.let { return it }
+        // 两种引擎的参考图标签完全不同：Qwen 用 <imageN>，H3 用 <Picture N>。
+        // 必须按当前档位对应的引擎选校验器，否则 H3 的英文提示词会被误判为「没有 <image1>」。
+        val err = if (Resolution.engineFor(Store.cfg.megapixels) == "h3")
+            H3Prompt.validate(prompt, refs.size)
+        else
+            Prompt.validatePrompt(prompt, refs.size)
+        err?.let { return it }
         if (Store.cfg.host.isBlank()) return "请先在「6.设置」填写 ComfyUI 的 IP 地址。"
         return null
     }
@@ -309,16 +379,19 @@ class GenerateFragment : Fragment(R.layout.fragment_generate) {
 
         val hasC = Store.costume != null
         val hasP = Store.pose != null
+        val eng = Resolution.engineFor(cfg.megapixels)
         val spec = GenSpec(
             refs = refs,
             prompt = prompt,
-            negative = negativeFor(refs, hasC, hasP),
+            negative = negativeFor(hasC, hasP),
             ratioKey = Store.ratio,
             megapixels = cfg.megapixels,
             seed = cfg.seed,
             steps = cfg.steps,
             cfgScale = cfg.cfgScale,
-            cfg = cfg
+            cfg = cfg,
+            engine = eng,
+            stripBackground = Store.transparentBg()
         )
         Store.syncToCfg()
         Settings.save(ctx, cfg)
@@ -350,7 +423,6 @@ class GenerateFragment : Fragment(R.layout.fragment_generate) {
         btnGenerate.isEnabled = !busy
         btnInterrupt.isEnabled = busy
         progress.visibility = if (busy) View.VISIBLE else View.GONE
-        if (!busy) tvProgress.text = Store.status.value
     }
 
     private fun showResult(path: String) {

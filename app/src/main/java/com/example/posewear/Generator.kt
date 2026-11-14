@@ -20,7 +20,9 @@ data class GenSpec(
     val seed: Long,
     val steps: Int,
     val cfgScale: Double,
-    val cfg: Cfg
+    val cfg: Cfg,
+    val engine: String = "qwen",      // 'qwen' 或 'h3'
+    val stripBackground: Boolean = false  // 「背景」下拉选到透明背景：生成后抠成透明 PNG
 )
 
 data class GenInfo(
@@ -54,7 +56,8 @@ object Generator {
             val tag = SimpleDateFormat("HHmmss", Locale.US).format(Date())
             val mode = if (spec.refs.size > 1)
                 spec.refs.drop(1).joinToString(" + ") { it.kind } else "仅人物原图"
-            stage("生成模式：${mode}（${spec.refs.size} 张参考图）")
+            val engineName = if (spec.engine == "h3") "MiniMax-H3-Image" else "Qwen-Image 2.1"
+            stage("生成模式：${mode}（${spec.refs.size} 张参考图 · $engineName）")
 
             // 上传只做一次，降档重试时复用
             stage("上传参考图…")
@@ -65,7 +68,7 @@ object Generator {
                 uploaded += ComfyClient.upload(base, png, "${r.uploadName}_${tag}.png", timeout)
             }
 
-            val tiers = Resolution.tierSteps(spec.megapixels)
+            val tiers = Resolution.tierSteps(spec.megapixels, spec.engine)
             var lastErr: String? = null
             for ((idx, mp) in tiers.withIndex()) {
                 if (abort.aborted) throw ComfyException("已取消")
@@ -74,14 +77,26 @@ object Generator {
                       else "目标 ${w}×${h} · ${"%.2f".format(w * h / 1_000_000.0)} MP")
 
                 try {
-                    val (flow, outId) = Workflow.build(
-                        refs = uploaded,
-                        width = w, height = h,
-                        prompt = spec.prompt, negative = spec.negative,
-                        seed = spec.seed, steps = spec.steps, cfgScale = spec.cfgScale,
-                        cfg = spec.cfg,
-                        prefix = "PoseWearStudio/pw_${tag}"
-                    )
+                    val (flow, outId) = if (spec.engine == "h3") {
+                        H3Workflow.build(
+                            refs = uploaded,
+                            width = w, height = h,
+                            prompt = spec.prompt,
+                            steps = spec.steps, cfgScale = spec.cfgScale,
+                            sampler = "euler", scheduler = "simple",
+                            unet = spec.cfg.unet, clip = spec.cfg.clip, vae = spec.cfg.vae,
+                            prefix = "PoseWearStudio/pw_${tag}",
+                            stripBackground = spec.stripBackground)
+                    } else {
+                        Workflow.build(
+                            refs = uploaded,
+                            width = w, height = h,
+                            prompt = spec.prompt, negative = spec.negative,
+                            seed = spec.seed, steps = spec.steps, cfgScale = spec.cfgScale,
+                            cfg = spec.cfg,
+                            prefix = "PoseWearStudio/pw_${tag}",
+                            stripBackground = spec.stripBackground)
+                    }
                     stage("已提交，正在生成…")
                     val t0 = System.currentTimeMillis()
                     val pid = ComfyClient.queue(base, flow, timeout)

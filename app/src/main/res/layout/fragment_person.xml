@@ -47,7 +47,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:gravity="center"
-                    android:text="点击此处选择人物正面照片\n支持 JPG / PNG / WEBP"
+                    android:text="点击此处选择人物正面照片\n可从本机任意目录选择 · 支持 JPG / PNG / WEBP"
                     android:textSize="@dimen/text_body"
                     android:textColor="@color/text_secondary"
                     android:lineSpacingExtra="6dp" />
@@ -58,7 +58,16 @@
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/btn_height"
                 android:layout_marginTop="@dimen/section_gap"
-                android:text="选择照片…" />
+                android:text="选择照片（本机文件浏览器）…" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_reset_dir"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/btn_height"
+                android:layout_marginTop="4dp"
+                android:text="清除目录记忆 · 回到内部存储根"
+                android:textSize="@dimen/text_small"
+                style="?attr/materialButtonOutlinedStyle" />
 
             <TextView
                 android:id="@+id/tv_photo_path"
@@ -70,6 +79,37 @@
                 android:textColor="@color/text_secondary"
                 android:maxLines="2"
                 android:ellipsize="middle" />
+
+            <TextView
+                android:id="@+id/tv_photo_info"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:padding="8dp"
+                android:background="@drawable/bg_note"
+                android:text="选择照片后，这里会显示原图分辨率与最接近的画幅比例。"
+                android:textSize="@dimen/text_small"
+                android:textColor="@color/primary"
+                android:lineSpacingExtra="3dp" />
+
+            <TextView
+                android:id="@+id/tv_pick_dir"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="下次默认打开：内部存储根目录"
+                android:textSize="@dimen/text_small"
+                android:textColor="@color/primary"
+                android:lineSpacingExtra="2dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="内置文件浏览器可浏览本机所有目录：列表带缩略图，点图片可先看大图再确认使用；浏览到哪个目录就记住哪个目录，下次打开直接落在该目录。若列表为空或缩略图不显示，请到「6.设置」开启「所有文件访问权限」。"
+                android:textSize="@dimen/text_small"
+                android:textColor="@color/text_secondary"
+                android:lineSpacingExtra="2dp" />
         </LinearLayout>
 
         <TextView

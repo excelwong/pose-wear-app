@@ -2,10 +2,7 @@ package com.example.posewear
 
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.os.Environment
-import android.provider.Settings as AndroidSettings
 import android.view.View
 import android.widget.EditText
 import android.widget.LinearLayout
@@ -49,10 +46,10 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         tvCatalog = view.findViewById(R.id.tv_catalog)
 
         // 显示当前已安装 APK 的版本，便于核对每次交付是否递增
-        @Suppress("DEPRECATION")
         val pkgInfo = ctx.packageManager.getPackageInfo(ctx.packageName, 0)
+        val code = androidx.core.content.pm.PackageInfoCompat.getLongVersionCode(pkgInfo)
         view.findViewById<TextView>(R.id.tv_version).text =
-            "应用版本 ${pkgInfo.versionName} · versionCode ${pkgInfo.versionCode}"
+            "应用版本 ${pkgInfo.versionName} · versionCode ${code}"
 
         val c = Store.cfg
 
@@ -97,11 +94,12 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
             }
         }
 
+        // 目录选择器默认打开上次选过的目录，可定位到本机任意目录
         view.findViewById<MaterialButton>(R.id.btn_pick_costume).setOnClickListener {
-            pickCostume.launch(null)
+            pickCostume.launch(StoragePick.initialTreeDir(ctx))
         }
         view.findViewById<MaterialButton>(R.id.btn_pick_pose).setOnClickListener {
-            pickPose.launch(null)
+            pickPose.launch(StoragePick.initialTreeDir(ctx))
         }
         view.findViewById<MaterialButton>(R.id.btn_scan).setOnClickListener {
             val cfg = collect()
@@ -115,7 +113,9 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
                 Store.setStatus("素材库扫描完成：服装 ${n1} 件 / 姿态 ${n2} 张")
             }
         }
-        view.findViewById<MaterialButton>(R.id.btn_permission).setOnClickListener { askAllFiles() }
+        val btnPermission = view.findViewById<MaterialButton>(R.id.btn_permission)
+        btnPermission.setOnClickListener { askAllFiles() }
+        refreshPermissionButton(btnPermission)
 
         updateCatalog(Catalog.costumes.size, Catalog.poses.size)
     }
@@ -139,25 +139,29 @@ class SettingsFragment : Fragment(R.layout.fragment_settings) {
         val s = uri.toString()
         if (isCostume) etCostumeDir.setText(s) else etPoseDir.setText(s)
         save(false)
-        toast("目录已选择，请点「重新扫描素材库」或下次启动自动扫描")
+        val label = StoragePick.rememberTreePick(ctx, uri)
+        toast("目录已选择（已记住「${label}」，下次默认从这里打开），请点「重新扫描素材库」")
     }
 
     private fun askAllFiles() {
-        val ctx = requireContext()
-        if (Build.VERSION.SDK_INT >= 30 && !Environment.isExternalStorageManager()) {
-            try {
-                val i = Intent(
-                    AndroidSettings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION,
-                    Uri.parse("package:${ctx.packageName}")
-                )
-                startActivity(i)
-            } catch (e: Exception) {
-                try { startActivity(Intent(AndroidSettings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION)) }
-                catch (e2: Exception) { toastLong("无法打开权限设置：${e2.message}") }
-            }
+        if (StoragePick.hasAllFilesAccess()) {
+            toast("已开启「所有文件访问权限」，可从本机任意目录选择照片和素材库目录。")
         } else {
-            toast("已具备文件访问权限，可直接填写绝对路径；也可点「选目录」用系统选择器授权。")
+            toast("开启后即可浏览本机所有目录（不只是相机 / Pictures）。")
+            StoragePick.openAllFilesSettings(requireContext())
         }
+    }
+
+    private fun refreshPermissionButton(btn: MaterialButton) {
+        btn.text = if (StoragePick.hasAllFilesAccess())
+            "所有文件权限：已开启" else "开启所有文件访问权限"
+    }
+
+    /** 从系统权限设置返回后刷新按钮状态。 */
+    override fun onResume() {
+        super.onResume()
+        if (isAdded) view?.findViewById<MaterialButton>(R.id.btn_permission)
+            ?.let { refreshPermissionButton(it) }
     }
 
     private fun fill(c: Cfg) {
