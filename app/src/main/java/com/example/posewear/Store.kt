@@ -25,7 +25,7 @@ object Store {
     var keepCostume = false     // 不换装 · 保持原服装
     var nude = false            // 全裸 · 无服装（仅服装页）
     var keepPose = false        // 不换姿势 · 保持原姿势
-    var halfBody = false        // 半身照（姿态页）：全裸提示词中不写阴毛描述
+    var halfBody = false        // 白虎（姿态页）：全裸提示词中不写阴毛描述
 
     /** 生成页「背景」下拉：keep / white / transparent，默认 keep，随设置持久化。 */
     var bgMode = BgMode.KEEP

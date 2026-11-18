@@ -16,4 +16,10 @@
         <item name="android:textColorSecondary">@color/text_secondary</item>
         <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
     </style>
+
+    <!-- 双栏 tab 标签紧凑样式：短文案 + 小字号，配合 tabMinWidth=0 / 小 padding -->
+    <style name="TabTextCompact" parent="TextAppearance.Material3.LabelMedium">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
 </resources>

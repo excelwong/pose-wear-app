@@ -12,6 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentTransaction
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -23,17 +24,20 @@ import kotlin.math.max
 
 /**
  * 单 Activity + 常驻 Fragment + hide/show 切换（参考 novel-studio-app）。
- * 折叠屏展开后（sw600dp+）变成左右双栏：左侧浏览素材/配置，右侧「生成」面板常驻。
- * 窄屏 6 个 tab；宽屏左栏 5 个 tab（生成页常驻右栏，不占 tab）。
+ * 折叠屏展开后（sw600dp+）变成左右双栏：
+ *   左栏 3 个 tab（1.人物 / 2.服装 / 3.姿态），右栏 3 个 tab（4.生成 / 5.参数 / 6.设置）。
+ *   两组 tab 完全同构，默认都选中第 0 个标签，其余标签为未选中状态。
+ * 窄屏仍是单栏 6 个 tab，逻辑不变。
  */
 class MainActivity : AppCompatActivity() {
 
     private val wide: Boolean by lazy { resources.getBoolean(R.bool.wide_screen) }
     private lateinit var tabs: TabLayout
+    private var rightTabs: TabLayout? = null
     private lateinit var statusBar: TextView
     private var rightFrame: FrameLayout? = null
-    private val frags = mutableListOf<Fragment>()
-    private var genFrag: GenerateFragment? = null
+    private val frags = mutableListOf<Fragment>()        // 左栏（窄屏时为全部 6 个）
+    private val rightFrags = mutableListOf<Fragment>()  // 宽屏右栏：生成 / 参数 / 设置
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +46,8 @@ class MainActivity : AppCompatActivity() {
         tabs = findViewById(R.id.tab_layout)
         statusBar = findViewById(R.id.status_bar)
         rightFrame = findViewById(R.id.right_frame)
+        // 窄屏布局没有这两个 id，findViewById 返回 null，setupRightPanel() 会直接跳过
+        rightTabs = findViewById(R.id.right_tab_layout)
         val contentFrame: FrameLayout = findViewById(R.id.content_frame)
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById<View>(R.id.root_layout)) { v, insets ->
@@ -53,53 +59,26 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
-        val titles = if (wide)
-            listOf(
-                R.string.tab_person, R.string.tab_costume, R.string.tab_pose,
-                R.string.tab_params, R.string.tab_settings
-            )
+        val leftTitles = if (wide)
+            listOf(R.string.tab_person, R.string.tab_costume, R.string.tab_pose)
         else
             listOf(
                 R.string.tab_person, R.string.tab_costume, R.string.tab_pose,
                 R.string.tab_generate, R.string.tab_params, R.string.tab_settings
             )
-        val count = titles.size
 
-        if (savedInstanceState == null) {
-            val person = PersonFragment()
-            val costume = LibraryFragment.newInstance(Catalog.COSTUME)
-            val pose = LibraryFragment.newInstance(Catalog.POSE)
-            val generate = GenerateFragment()
-            val params = ParamsFragment()
-            val settings = SettingsFragment()
-            genFrag = generate
-            frags.clear()
-            if (wide) frags.addAll(listOf(person, costume, pose, params, settings))
-            else frags.addAll(listOf(person, costume, pose, generate, params, settings))
+        buildFragments(contentFrame)
 
-            val tr = supportFragmentManager.beginTransaction()
-            frags.forEachIndexed { i, f ->
-                tr.add(contentFrame.id, f, "f${i}")
-                if (i != 0) tr.hide(f)
-            }
-            if (wide) rightFrame?.let { tr.add(it.id, generate, "gen") }
-            tr.commitAllowingStateLoss()
-        } else {
-            frags.clear()
-            for (i in 0 until count) {
-                supportFragmentManager.findFragmentByTag("f${i}")?.let { frags.add(it) }
-            }
-            genFrag = supportFragmentManager.findFragmentByTag("gen") as? GenerateFragment
-        }
-
-        // 立即落盘 add 事务，避免 addTab 首次触发 onTabSelected 时 show/hide 尚未 add 的 Fragment
+        // 立即落盘事务，避免 addTab 首次触发 onTabSelected 时 show/hide 尚未 add 的 Fragment
         supportFragmentManager.executePendingTransactions()
-        titles.forEach { tabs.addTab(tabs.newTab().setText(it)) }
+        leftTitles.forEach { tabs.addTab(tabs.newTab().setText(it)) }
         tabs.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
             override fun onTabSelected(tab: TabLayout.Tab) = showTab(tab.position)
             override fun onTabUnselected(tab: TabLayout.Tab) {}
             override fun onTabReselected(tab: TabLayout.Tab) {}
         })
+
+        setupRightPanel()
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -112,10 +91,77 @@ class MainActivity : AppCompatActivity() {
         autoLoad()
     }
 
-    private fun showTab(idx: Int) {
-        if (idx !in frags.indices) return
+    /**
+     * 按「当前布局」创建全部 Fragment。
+     *
+     * 不复用 FragmentManager 自动恢复出来的旧实例：折叠屏展开/收起会换布局，
+     * 旧 Fragment 仍挂在以前的容器里，直接复用会让右栏空白或左栏重叠。
+     * 页面状态本来就存在 Store / SharedPreferences 里，重建 Fragment 不会丢数据。
+     */
+    private fun buildFragments(contentFrame: FrameLayout) {
+        val person = PersonFragment()
+        val costume = LibraryFragment.newInstance(Catalog.COSTUME)
+        val pose = LibraryFragment.newInstance(Catalog.POSE)
+        val generate = GenerateFragment()
+        val params = ParamsFragment()
+        val settings = SettingsFragment()
+
         val tr = supportFragmentManager.beginTransaction()
-        frags.forEachIndexed { i, f -> if (i == idx) tr.show(f) else tr.hide(f) }
+        supportFragmentManager.fragments.forEach { tr.remove(it) }
+        frags.clear()
+        rightFrags.clear()
+        if (wide) {
+            frags.addAll(listOf(person, costume, pose))
+            addGroup(tr, contentFrame.id, frags, "L")
+            rightFrame?.let { frame ->
+                // R0 = 生成（默认选中显示），R1 = 参数，R2 = 设置
+                rightFrags.addAll(listOf(generate, params, settings))
+                addGroup(tr, frame.id, rightFrags, "R")
+            }
+        } else {
+            frags.addAll(listOf(person, costume, pose, generate, params, settings))
+            addGroup(tr, contentFrame.id, frags, "L")
+        }
+        tr.commitAllowingStateLoss()
+    }
+
+    /** 把一组 Fragment add 进同一容器，默认只显示第 0 个，tag 用前缀 + 下标。 */
+    private fun addGroup(tr: FragmentTransaction, frameId: Int,
+                         list: List<Fragment>, prefix: String) {
+        list.forEachIndexed { i, f ->
+            tr.add(frameId, f, "$prefix$i")
+            if (i != 0) tr.hide(f)
+        }
+    }
+
+    /**
+     * 右栏 tab 组与左栏同构：3 个标签（4.生成 / 5.参数 / 6.设置），
+     * 默认选中第 0 个，其余两个保持未选中；点标签切换右栏内容。
+     */
+    private fun setupRightPanel() {
+        val rt = rightTabs ?: return
+        listOf(R.string.tab_generate, R.string.tab_params, R.string.tab_settings).forEach {
+            rt.addTab(rt.newTab().setText(it))
+        }
+        rt.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
+            override fun onTabSelected(tab: TabLayout.Tab) { showRightPage(tab.position) }
+            override fun onTabUnselected(tab: TabLayout.Tab) {}
+            override fun onTabReselected(tab: TabLayout.Tab) {}
+        })
+        // 与左栏一致：默认选中第 0 个标签（4.生成），另外两个为未选中态。
+        // 右栏 TabLayout 设了 saveEnabled=false，配置变更后也会回到这个默认态，
+        // 与按当前布局重建后的 Fragment 显示保持一致。
+        rt.selectTab(rt.getTabAt(0))
+        showRightPage(0)
+    }
+
+    private fun showTab(idx: Int) = switchTo(frags, idx)
+    private fun showRightPage(idx: Int) = switchTo(rightFrags, idx)
+
+    private fun switchTo(list: List<Fragment>, idx: Int) {
+        if (idx !in list.indices) return
+        val tr = supportFragmentManager.beginTransaction()
+        list.forEachIndexed { i, f -> if (i == idx) tr.show(f) else tr.hide(f) }
         tr.commitAllowingStateLoss()
     }
 

@@ -70,7 +70,7 @@ class LibraryFragment : Fragment(R.layout.fragment_library) {
         pageLabel = view.findViewById(R.id.tv_page)
         rv = view.findViewById(R.id.rv_grid)
 
-        // 姿态页三个选项按钮：保持原姿势 / 半身照，服装页两个：保持原服装 / 全裸
+        // 姿态页三个选项按钮：保持原姿势 / 白虎，服装页两个：保持原服装 / 全裸
         btnKeep.text = if (isCostume) "保持原服装" else "保持原姿势"
         btnNude.visibility = if (isCostume) View.VISIBLE else View.GONE
         btnHalfBody.visibility = if (isCostume) View.GONE else View.VISIBLE
@@ -270,7 +270,7 @@ class LibraryFragment : Fragment(R.layout.fragment_library) {
         btnKeep.alpha = if (keep) 1f else 0.82f
         btnNude.text = (if (nude) "✓ " else "") + "全裸 · 无服装"
         btnNude.alpha = if (nude) 1f else 0.82f
-        btnHalfBody.text = (if (halfBody) "✓ " else "") + "半身照"
+        btnHalfBody.text = (if (halfBody) "✓ " else "") + "白虎"
         btnHalfBody.alpha = if (halfBody) 1f else 0.82f
         adapter.setSelected(currentSelectedId())
         info.text = when {

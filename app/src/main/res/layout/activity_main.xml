@@ -44,7 +44,11 @@
         android:background="@color/panel_bg"
         app:tabMode="scrollable"
         app:tabGravity="start"
-        app:tabIndicatorHeight="3dp"
+        app:tabMinWidth="0dp"
+        app:tabPaddingStart="4dp"
+        app:tabPaddingEnd="4dp"
+        app:tabTextAppearance="@style/TabTextCompact"
+        app:tabIndicatorHeight="2dp"
         app:tabIndicatorColor="@color/primary"
         app:tabSelectedTextColor="@color/primary"
         app:tabTextColor="@color/text_secondary" />

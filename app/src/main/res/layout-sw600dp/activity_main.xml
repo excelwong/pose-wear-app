@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 折叠屏展开 / 平板：左右双栏。左侧浏览人物/服装/姿态/模型与参数/设置，
-     右侧「生成」面板常驻，一屏即可同时看到素材、提示词、生成按钮与结果，无需来回切 tab。
-     左栏有 5 个 tab，用 scrollable 避免长标题（如「5.模型与参数」）被挤压。 -->
+<!-- 折叠屏展开 / 平板：左右双栏。
+     左栏 3 个 tab（1.人物 / 2.服装 / 3.姿态），右栏 3 个 tab（4.生成 / 5.参数 / 6.设置）。
+     两组 tab 完全同构：默认都选中第 0 个标签，其余标签为未选中状态。
+     两边 tab 都用短文案 + tabMinWidth=0 + 小 padding + 小字号，一排紧凑放下。 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/root_layout"
@@ -34,7 +35,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:layout_marginStart="12dp"
-            android:text="折叠屏宽屏模式 · 左侧选素材，右侧生成常驻"
+            android:text="折叠屏宽屏模式 · 左侧选素材，右侧生成"
             android:textSize="@dimen/text_small"
             android:textColor="@color/text_secondary" />
     </LinearLayout>
@@ -45,7 +46,7 @@
         android:layout_weight="1"
         android:orientation="horizontal">
 
-        <!-- 左栏：5 个 tab（人物/服装/姿态/模型与参数/设置） -->
+        <!-- 左栏：3 个素材 tab，默认选中第 0 个 -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -60,7 +61,11 @@
                 android:background="@color/panel_bg"
                 app:tabMode="scrollable"
                 app:tabGravity="start"
-                app:tabIndicatorHeight="3dp"
+                app:tabMinWidth="0dp"
+                app:tabPaddingStart="4dp"
+                app:tabPaddingEnd="4dp"
+                app:tabTextAppearance="@style/TabTextCompact"
+                app:tabIndicatorHeight="2dp"
                 app:tabIndicatorColor="@color/primary"
                 app:tabSelectedTextColor="@color/primary"
                 app:tabTextColor="@color/text_secondary" />
@@ -77,7 +82,7 @@
             android:layout_height="match_parent"
             android:background="@color/divider" />
 
-        <!-- 右栏：生成面板常驻 -->
+        <!-- 右栏：与左栏同构的 3 个 tab，默认选中第 0 个「4.生成」 -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
@@ -85,18 +90,23 @@
             android:orientation="vertical"
             android:background="@color/panel_bg">
 
-            <TextView
+            <com.google.android.material.tabs.TabLayout
+                android:id="@+id/right_tab_layout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:minHeight="@dimen/tab_min_h"
-                android:gravity="center_vertical"
-                android:paddingStart="@dimen/screen_padding"
-                android:paddingEnd="@dimen/screen_padding"
                 android:background="@color/status_bg"
-                android:text="生成控制台 · 常驻"
-                android:textSize="@dimen/text_body"
-                android:textStyle="bold"
-                android:textColor="@color/primary" />
+                android:saveEnabled="false"
+                app:tabMode="scrollable"
+                app:tabGravity="start"
+                app:tabMinWidth="0dp"
+                app:tabPaddingStart="4dp"
+                app:tabPaddingEnd="4dp"
+                app:tabTextAppearance="@style/TabTextCompact"
+                app:tabIndicatorHeight="2dp"
+                app:tabIndicatorColor="@color/primary"
+                app:tabSelectedTextColor="@color/primary"
+                app:tabTextColor="@color/text_secondary" />
 
             <FrameLayout
                 android:id="@+id/right_frame"
